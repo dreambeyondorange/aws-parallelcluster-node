@@ -16,6 +16,7 @@ import logging
 # In this file the input of the module subprocess is trusted.
 import subprocess  # nosec B404
 from collections import defaultdict
+from datetime import datetime, timezone
 from typing import Dict, Iterable, List
 
 import boto3
@@ -278,6 +279,9 @@ class InstanceManager:
 
         instances = []
         for instance_info in filtered_iterator:
+            if (datetime.now(timezone.utc) - instance_info["LaunchTime"]).total_seconds()<300:
+                logger.info("Mock delay")
+                continue
             try:
                 private_ip, private_dns_name, all_private_ips = get_private_ip_address_and_dns_name(instance_info)
                 instances.append(

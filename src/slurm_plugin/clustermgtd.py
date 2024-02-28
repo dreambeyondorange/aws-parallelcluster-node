@@ -150,7 +150,7 @@ class ClustermgtdConfig:
         "terminate_drain_nodes": True,
         "terminate_down_nodes": True,
         "orphaned_instance_timeout": 300,
-        "ec2_instance_missing_max_count": 0,
+        "ec2_instance_missing_max_count": 10,
         # Health check configs
         "disable_ec2_health_check": False,
         "disable_scheduled_event_health_check": False,
@@ -1207,14 +1207,17 @@ class ClusterManager:
         If check_node_is_valid=True, check whether a node is in replacement,
         If check_node_is_valid=False, check whether a node is replacement timeout.
         """
+        log.info(f"Checking node in replacement {node} check valid? {check_node_is_valid}")
+        # if node.instance
         if node.is_backing_instance_valid(
             self._config.ec2_instance_missing_max_count,
             self._nodes_without_backing_instance_count_map,
             log_warn_if_unhealthy=True,
         ) and node.name in self._static_nodes_in_replacement:
-            time_is_expired = time_is_up(
+            time_is_expired = False if not node.instance else time_is_up(
                 node.instance.launch_time, self._current_time, grace_time=self._config.node_replacement_timeout
             )
+            log.info(f"Node {node} is in replacement and timer expired? {time_is_expired}, instance? {node.instance}")
             return not time_is_expired if check_node_is_valid else time_is_expired
         return False
 
